@@ -1,6 +1,6 @@
 # Track Plan: Refine the Options Chain Table UI and Data Formatting
 
-## Phase 1: Preparation and Environment
+## Phase 1: Preparation and Environment [checkpoint: 0b9facd]
 - [x] Task: Verify development environment and dependencies. <!-- id: bdb0728 -->
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Environment' (Protocol in workflow.md) <!-- id: 7696eb7 -->
 
