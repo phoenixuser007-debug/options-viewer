@@ -5,7 +5,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Environment' (Protocol in workflow.md) <!-- id: 7696eb7 -->
 
 ## Phase 2: Implement UI Refinements in OptionsTable
-- [~] Task: Write tests for `OptionsTable` data formatting and alignment.
+- [x] Task: Write tests for `OptionsTable` data formatting and alignment. <!-- id: 7cd54b3 -->
 - [ ] Task: Apply monospaced font classes to numerical cells in `OptionsTable`.
 - [ ] Task: Implement right-alignment for numerical columns and left-alignment for text columns.
 - [ ] Task: Implement zebra striping (alternating row backgrounds) using TailwindCSS utility classes.
