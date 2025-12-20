@@ -4,7 +4,7 @@
 - [x] Task: Verify development environment and dependencies. <!-- id: bdb0728 -->
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Environment' (Protocol in workflow.md) <!-- id: 7696eb7 -->
 
-## Phase 2: Implement UI Refinements in OptionsTable
+## Phase 2: Implement UI Refinements in OptionsTable [checkpoint: cfcfb4e]
 - [x] Task: Write tests for `OptionsTable` data formatting and alignment. <!-- id: 7cd54b3 -->
 - [x] Task: Apply monospaced font classes to numerical cells in `OptionsTable`. <!-- id: cb148e1 -->
 - [x] Task: Implement right-alignment for numerical columns and left-alignment for text columns. <!-- id: cb148e1 -->
