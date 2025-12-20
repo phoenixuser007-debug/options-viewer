@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1766245240212" clover="3.2.0">
+  <project timestamp="1766245240212" name="All files">
+    <metrics statements="22" coveredstatements="20" conditionals="67" coveredconditionals="50" methods="10" coveredmethods="8" elements="99" coveredelements="78" complexity="0" loc="22" ncloc="22" packages="2" files="2" classes="2"/>
+    <package name="components">
+      <metrics statements="22" coveredstatements="20" conditionals="67" coveredconditionals="50" methods="10" coveredmethods="8"/>
+      <file name="OptionsTable.tsx" path="/Users/naveenhollau/Development/IDE-Projects/options-viewer/options-viewer-tauri/src/components/OptionsTable.tsx">
+        <metrics statements="22" coveredstatements="20" conditionals="67" coveredconditionals="50" methods="10" coveredmethods="8"/>
+        <line num="11" count="7" type="cond" truecount="3" falsecount="1"/>
+        <line num="12" count="7" type="stmt"/>
+        <line num="16" count="1" type="cond" truecount="3" falsecount="1"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="21" count="1" type="stmt"/>
+        <line num="24" count="1" type="stmt"/>
+        <line num="27" count="3" type="stmt"/>
+        <line num="28" count="3" type="stmt"/>
+        <line num="29" count="5" type="stmt"/>
+        <line num="30" count="5" type="stmt"/>
+        <line num="31" count="5" type="stmt"/>
+        <line num="32" count="5" type="stmt"/>
+        <line num="36" count="3" type="stmt"/>
+        <line num="54" count="24" type="stmt"/>
+        <line num="58" count="24" type="stmt"/>
+        <line num="65" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="66" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="67" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="69" count="5" type="stmt"/>
+        <line num="76" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="112" count="0" type="cond" truecount="0" falsecount="2"/>
+      </file>
+    </package>
+    <package name="types">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.ts" path="/Users/naveenhollau/Development/IDE-Projects/options-viewer/options-viewer-tauri/src/types/index.ts">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+  </project>
+</coverage>
