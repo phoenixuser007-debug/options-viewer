@@ -6,44 +6,13 @@ import { StrikeData } from '../types';
 const mockStrikes: StrikeData[] = [
   {
     strike: 24000,
-    call: {
-      ask: 100.5,
-      bid: 99.5,
-      iv: 0.155,
-      delta: 0.55,
-      gamma: 0.0012,
-      theta: -15.5,
-      vega: 20.5,
-      rho: 0.05,
-      strike: 24000,
-      'option-type': 'C',
-      currency: 'INR',
-      expiration: 123456789,
-      pricescale: 100,
-      root: 'NIFTY',
-      bid_iv: null,
-      ask_iv: null,
-      theoPrice: null
-    },
-    put: {
-      ask: 80.5,
-      bid: 79.5,
-      iv: 0.145,
-      delta: -0.45,
-      gamma: 0.0011,
-      theta: -12.5,
-      vega: 18.5,
-      rho: -0.04,
-      strike: 24000,
-      'option-type': 'P',
-      currency: 'INR',
-      expiration: 123456789,
-      pricescale: 100,
-      root: 'NIFTY',
-      bid_iv: null,
-      ask_iv: null,
-      theoPrice: null
-    }
+    call: null,
+    put: null
+  },
+  {
+    strike: 24100,
+    call: null,
+    put: null
   }
 ];
 
@@ -57,24 +26,45 @@ describe('OptionsTable formatting and alignment', () => {
       />
     );
     
-    // Check if the strike price cell has 'font-mono' class
+    // Check if the row container has 'font-mono' class
     const strikeCell = screen.getByText('24,000');
-    // Note: We expect this to FAIL initially
     expect(strikeCell.parentElement).toHaveClass('font-mono');
   });
 
   it('should right-align numerical columns', () => {
+    const strikesWithData: StrikeData[] = [{
+      strike: 24000,
+      call: {
+        ask: 100.5,
+        bid: 99.5,
+        iv: 0.155,
+        delta: 0.55,
+        gamma: 0.0012,
+        theta: -15.5,
+        vega: 20.5,
+        rho: 0.05,
+        strike: 24000,
+        'option-type': 'C',
+        currency: 'INR',
+        expiration: 123456789,
+        pricescale: 100,
+        root: 'NIFTY',
+        bid_iv: null,
+        ask_iv: null,
+        theoPrice: null
+      },
+      put: null
+    }];
+
     render(
       <OptionsTable 
-        strikes={mockStrikes} 
-        currentPrice={24000} 
+        strikes={strikesWithData} 
+        currentPrice={24100} 
         onOptionClick={vi.fn()} 
       />
     );
     
-    // Ask price for call
     const callAsk = screen.getByText('100.50');
-    // Note: We expect this to FAIL initially as it's currently text-center
     expect(callAsk).toHaveClass('text-right');
   });
 
@@ -82,13 +72,12 @@ describe('OptionsTable formatting and alignment', () => {
     render(
       <OptionsTable 
         strikes={mockStrikes} 
-        currentPrice={24000} 
+        currentPrice={23000} // Make both non-ATM
         onOptionClick={vi.fn()} 
       />
     );
     
-    const row = screen.getByText('24,000').closest('.grid');
-    // Note: We expect this to FAIL initially
-    expect(row).toHaveClass('even:bg-[var(--bg-hover)]');
+    const rows = screen.getAllByText(/24,(0|1)00/).map(cell => cell.parentElement);
+    expect(rows[0]).toHaveClass('even:bg-[var(--bg-hover)]');
   });
 });
