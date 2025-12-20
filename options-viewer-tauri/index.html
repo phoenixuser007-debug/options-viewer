@@ -1,13 +1,42 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>options-viewer-tauri</title>
+    
+    <!-- Tauri desktop optimizations -->
+    <!-- Disable text selection for app-like feel (can be overridden per-element) -->
+    <style>
+      /* Prevent text selection on non-input elements for desktop app feel */
+      body {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      /* Allow selection in inputs and text areas */
+      input, textarea, [contenteditable="true"], .selectable {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      /* Disable pull-to-refresh and overscroll effects */
+      html, body {
+        overscroll-behavior: none;
+      }
+      /* Prevent context menu on images and other elements (native app behavior) */
+      img {
+        -webkit-user-drag: none;
+        user-drag: none;
+      }
+    </style>
+    
+    <!-- Disable browser features not needed in Tauri -->
+    <meta name="color-scheme" content="dark light" />
+    
+    <title>Options Viewer</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="h-full">
+    <!-- Disable right-click context menu for native app feel (optional) -->
+    <div id="root" class="h-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

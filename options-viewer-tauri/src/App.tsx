@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ExpirySelector } from './components/ExpirySelector';
-import { PriceDisplay } from './components/PriceDisplay';
 import { OptionsTable } from './components/OptionsTable';
 import { OHLCModal } from './components/OHLCModal';
 import { SymbolSearch } from './components/SymbolSearch';
+import { ThemeToggle } from './components/ThemeToggle';
 import { fetchOptions, fetchPrice, fetchExpirations } from './hooks/useTauriCommands';
 import type { ExpirationInfo, StrikeData, OptionData, OptionsResponse, SymbolSearchResult } from './types';
-import './index.css';
 
 const COLUMN_NAMES = ['ask', 'bid', 'currency', 'delta', 'expiration', 'gamma', 'iv', 'option-type', 'pricescale', 'rho', 'root', 'strike', 'theoPrice', 'theta', 'vega', 'bid_iv', 'ask_iv'];
 
@@ -198,44 +197,75 @@ function App() {
   }, []);
 
   return (
-    <div className="container">
-      <header className="compact-header glass">
-        <SymbolSearch
-          selectedSymbol={selectedSymbol}
-          onSymbolSelect={handleSymbolSelect}
-        />
-        <ExpirySelector
-          expirations={expirations}
-          selectedExpiration={selectedExpiration}
-          onSelect={setSelectedExpiration}
-        />
-        <PriceDisplay price={spotPrice} symbol={selectedSymbol} />
+    <div className="fixed inset-0 grid grid-rows-[auto_1fr] overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)] transition-theme">
+      {/* Header - Compact single row */}
+      <header className="bg-[var(--bg-secondary)] border-b border-[var(--border-color)] transition-theme">
+        <div className="px-3 py-2 flex items-center gap-3">
+          {/* Symbol Dropdown */}
+          <SymbolSearch
+            selectedSymbol={selectedSymbol}
+            onSymbolSelect={handleSymbolSelect}
+          />
+          
+          {/* Expiry Pills */}
+          <ExpirySelector
+            expirations={expirations}
+            selectedExpiration={selectedExpiration}
+            onSelect={setSelectedExpiration}
+          />
+          
+          {/* Spacer */}
+          <div className="flex-1" />
+          
+          {/* Price Display */}
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="text-tv-green font-bold tabular-nums">
+              {spotPrice ? `₹${spotPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}
+            </span>
+          </div>
+          
+          {/* Theme Toggle */}
+          <ThemeToggle />
+        </div>
       </header>
 
-      {loading && (
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Fetching {selectedSymbol} options data...</p>
-        </div>
-      )}
+      {/* Main Content - Takes remaining height via grid */}
+      <main className="relative min-h-0">
+        {/* Loading State */}
+        {loading && (
+          <div className="absolute inset-2 flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 border-3 border-[var(--border-light)] border-t-tv-blue rounded-full animate-spin" />
+            <p className="text-[var(--text-secondary)] text-sm">
+              Fetching {selectedSymbol} options data...
+            </p>
+          </div>
+        )}
 
-      {error && !loading && (
-        <div className="error">
-          <span className="error-icon">⚠</span>
-          <p>{error}</p>
-        </div>
-      )}
+        {/* Error State */}
+        {error && !loading && (
+          <div className="absolute inset-2 flex items-center justify-center">
+            <div className="flex items-center gap-3 px-6 py-4 rounded-lg bg-tv-red/10 border border-tv-red/20 text-tv-red">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          </div>
+        )}
 
-      {!loading && !error && strikes.length > 0 && (
-        <OptionsTable
-          strikes={strikes}
-          currentPrice={spotPrice || 0}
-          onOptionClick={handleOptionClick}
-        />
-      )}
+        {/* Options Table - Full height */}
+        {!loading && !error && strikes.length > 0 && (
+          <div className="absolute inset-2">
+            <OptionsTable
+              strikes={strikes}
+              currentPrice={spotPrice || 0}
+              onOptionClick={handleOptionClick}
+            />
+          </div>
+        )}
+      </main>
 
-
-
+      {/* OHLC Modal */}
       <OHLCModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

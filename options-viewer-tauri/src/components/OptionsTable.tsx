@@ -1,128 +1,146 @@
-import { useMemo, useCallback } from 'react';
-import type { StrikeData, OptionData } from '../types';
+import { useMemo } from 'react';
+import type { StrikeData } from '../types';
 
 interface OptionsTableProps {
-    strikes: StrikeData[];
-    currentPrice: number;
-    onOptionClick: (strike: number, optionType: 'C' | 'P') => void;
+  strikes: StrikeData[];
+  currentPrice: number;
+  onOptionClick: (strike: number, optionType: 'C' | 'P') => void;
 }
 
 function formatValue(value: number | null, decimals = 2): string {
-    if (value === null || value === undefined) return '--';
-    return Number(value).toFixed(decimals);
+  if (value === null || value === undefined) return '--';
+  return Number(value).toFixed(decimals);
 }
 
 function formatPercent(value: number | null): string {
-    if (value === null || value === undefined) return '--';
-    return (Number(value) * 100).toFixed(1) + '%';
+  if (value === null || value === undefined) return '--';
+  return (Number(value) * 100).toFixed(1) + '%';
 }
 
-function getColorClass(value: number | null): string {
-    if (value === null || value === undefined) return '';
-    return Number(value) >= 0 ? 'positive' : 'negative';
-}
+const CALL_HEADERS = ['Rho', 'Vega', 'Theta', 'Gamma', 'Delta', 'IV', 'Ask', 'Bid'];
+const PUT_HEADERS = ['Bid', 'Ask', 'IV', 'Delta', 'Gamma', 'Theta', 'Vega', 'Rho'];
 
-interface OptionCellsProps {
-    option: OptionData | null;
-    type: 'call' | 'put';
-}
-
-function OptionCells({ option, type }: OptionCellsProps) {
-    const dataClass = type === 'call' ? 'call-data' : 'put-data';
-
-    if (!option) {
-        return (
-            <>
-                <td className={dataClass}>--</td>
-                <td className={dataClass}>--</td>
-                <td className={dataClass}>--</td>
-                <td className={`${dataClass} greek-cell`}>--</td>
-                <td className={`${dataClass} greek-cell`}>--</td>
-                <td className={`${dataClass} greek-cell`}>--</td>
-                <td className={`${dataClass} greek-cell`}>--</td>
-                <td className={`${dataClass} greek-cell`}>--</td>
-            </>
-        );
-    }
-
-    return (
-        <>
-            <td className={dataClass}>{formatValue(option.bid)}</td>
-            <td className={dataClass}>{formatValue(option.ask)}</td>
-            <td className={`${dataClass} iv-cell`}>{formatPercent(option.iv)}</td>
-            <td className={`${dataClass} greek-cell ${getColorClass(option.delta)}`}>{formatValue(option.delta, 3)}</td>
-            <td className={`${dataClass} greek-cell`}>{formatValue(option.gamma, 3)}</td>
-            <td className={`${dataClass} greek-cell ${getColorClass(option.theta)}`}>{formatValue(option.theta, 3)}</td>
-            <td className={`${dataClass} greek-cell`}>{formatValue(option.vega, 3)}</td>
-            <td className={`${dataClass} greek-cell`}>{formatValue(option.rho, 3)}</td>
-        </>
-    );
-}
+// Base cell styles
+const cellBase = 'px-1 text-center overflow-hidden truncate';
 
 export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTableProps) {
-    const handleClick = useCallback((strike: number, cellIndex: number) => {
-        // Cells 0-7 are CALL side, cell 8 is strike, cells 9-16 are PUT side
-        const optionType: 'C' | 'P' = cellIndex < 8 ? 'C' : 'P';
-        onOptionClick(strike, optionType);
-    }, [onOptionClick]);
+  const rows = useMemo(() => {
+    return strikes.map((strikeData) => {
+      const isATM = Math.abs(strikeData.strike - currentPrice) < 50;
+      const isITMCall = strikeData.strike < currentPrice;
+      const isITMPut = strikeData.strike > currentPrice;
+      return { strikeData, isATM, isITMCall, isITMPut };
+    });
+  }, [strikes, currentPrice]);
 
-    const rows = useMemo(() => {
-        return strikes.map((strikeData) => {
-            const isATM = Math.abs(strikeData.strike - currentPrice) < 50;
-
-            return (
-                <tr
-                    key={strikeData.strike}
-                    className={isATM ? 'atm-strike' : ''}
-                    onClick={(e) => {
-                        const target = e.target as HTMLElement;
-                        const cellIndex = Array.from(target.parentElement?.children || []).indexOf(target);
-                        handleClick(strikeData.strike, cellIndex);
-                    }}
-                >
-                    <OptionCells option={strikeData.call} type="call" />
-                    <td className="strike-cell">{strikeData.strike.toLocaleString()}</td>
-                    <OptionCells option={strikeData.put} type="put" />
-                </tr>
-            );
-        });
-    }, [strikes, currentPrice, handleClick]);
-
-    return (
-        <div className="options-container glass">
-            <div className="table-wrapper">
-                <table className="options-table">
-                    <thead>
-                        <tr>
-                            <th colSpan={8} className="call-header">Calls</th>
-                            <th className="strike-header">Strike</th>
-                            <th colSpan={8} className="put-header">Puts</th>
-                        </tr>
-                        <tr className="sub-header">
-                            <th>Bid</th>
-                            <th>Ask</th>
-                            <th>IV</th>
-                            <th>Δ Delta</th>
-                            <th>Γ Gamma</th>
-                            <th>Θ Theta</th>
-                            <th>ν Vega</th>
-                            <th>ρ Rho</th>
-                            <th className="strike-cell">Price</th>
-                            <th>Bid</th>
-                            <th>Ask</th>
-                            <th>IV</th>
-                            <th>Δ Delta</th>
-                            <th>Γ Gamma</th>
-                            <th>Θ Theta</th>
-                            <th>ν Vega</th>
-                            <th>ρ Rho</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            </div>
+  return (
+    <div className="h-full flex flex-col rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] overflow-hidden">
+      {/* Main Header */}
+      <div className="flex-none grid grid-cols-17 bg-[var(--bg-tertiary)] border-b border-[var(--border-color)]">
+        <div className="col-span-8 px-2 py-2 text-center font-bold text-tv-green text-sm truncate">
+          CALLS
         </div>
-    );
+        <div className="col-span-1 px-2 py-2 text-center font-bold text-tv-purple text-sm bg-[var(--bg-hover)] truncate">
+          STRIKE
+        </div>
+        <div className="col-span-8 px-2 py-2 text-center font-bold text-tv-red text-sm truncate">
+          PUTS
+        </div>
+      </div>
+
+      {/* Sub Header */}
+      <div className="flex-none grid grid-cols-17 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs uppercase tracking-wider border-b border-[var(--border-color)]">
+        {CALL_HEADERS.map((h, i) => (
+          <div key={`ch-${i}`} className="px-1 py-2 text-center font-semibold truncate">{h}</div>
+        ))}
+        <div className="px-1 py-2 text-center font-semibold bg-[var(--bg-hover)] truncate">Price</div>
+        {PUT_HEADERS.map((h, i) => (
+          <div key={`ph-${i}`} className="px-1 py-2 text-center font-semibold truncate">{h}</div>
+        ))}
+      </div>
+
+      {/* Body - rows fill remaining space equally */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-auto">
+        {rows.map(({ strikeData, isATM, isITMCall, isITMPut }) => {
+          const callBg = isITMCall ? 'bg-tv-green/5' : '';
+          const putBg = isITMPut ? 'bg-tv-red/5' : '';
+          const rowBg = isATM ? 'bg-tv-blue/10' : '';
+
+          return (
+            <div
+              key={strikeData.strike}
+              className={`flex-1 min-h-[40px] grid grid-cols-17 items-center border-b border-[var(--border-color)] text-xs transition-colors ${rowBg}`}
+            >
+              {/* Call side - entire section clickable */}
+              <div
+                onClick={() => strikeData.call && onOptionClick(strikeData.strike, 'C')}
+                className={`col-span-8 grid grid-cols-8 items-center h-full cursor-pointer transition-colors hover:bg-tv-green/10 ${callBg} ${strikeData.call ? '' : 'cursor-default'}`}
+              >
+                <div className={`${cellBase} text-[var(--text-secondary)]`}>
+                  {strikeData.call ? formatValue(strikeData.call.rho, 3) : '--'}
+                </div>
+                <div className={`${cellBase} text-[var(--text-secondary)]`}>
+                  {strikeData.call ? formatValue(strikeData.call.vega, 2) : '--'}
+                </div>
+                <div className={`${cellBase} ${strikeData.call?.theta !== null && strikeData.call?.theta !== undefined && Number(strikeData.call.theta) < 0 ? 'text-tv-red' : 'text-tv-green'}`}>
+                  {strikeData.call ? formatValue(strikeData.call.theta, 2) : '--'}
+                </div>
+                <div className={`${cellBase} text-[var(--text-secondary)]`}>
+                  {strikeData.call ? formatValue(strikeData.call.gamma, 4) : '--'}
+                </div>
+                <div className={`${cellBase} text-tv-green font-medium`}>
+                  {strikeData.call ? formatValue(strikeData.call.delta, 3) : '--'}
+                </div>
+                <div className={`${cellBase} font-bold text-[var(--text-primary)]`}>
+                  {strikeData.call ? formatPercent(strikeData.call.iv) : '--'}
+                </div>
+                <div className={`${cellBase} font-semibold text-tv-green`}>
+                  {strikeData.call ? formatValue(strikeData.call.ask) : '--'}
+                </div>
+                <div className={`${cellBase} font-semibold text-tv-green`}>
+                  {strikeData.call ? formatValue(strikeData.call.bid) : '--'}
+                </div>
+              </div>
+
+              {/* Strike */}
+              <div className={`px-1 text-center font-bold text-sm bg-[var(--bg-tertiary)] h-full flex items-center justify-center border-x border-[var(--border-light)] overflow-hidden ${isATM ? 'text-tv-blue bg-tv-blue/20' : 'text-tv-purple'}`}>
+                {strikeData.strike.toLocaleString()}
+              </div>
+
+              {/* Put side - entire section clickable */}
+              <div
+                onClick={() => strikeData.put && onOptionClick(strikeData.strike, 'P')}
+                className={`col-span-8 grid grid-cols-8 items-center h-full cursor-pointer transition-colors hover:bg-tv-red/10 ${putBg} ${strikeData.put ? '' : 'cursor-default'}`}
+              >
+                <div className={`${cellBase} font-semibold text-tv-red`}>
+                  {strikeData.put ? formatValue(strikeData.put.bid) : '--'}
+                </div>
+                <div className={`${cellBase} font-semibold text-tv-red`}>
+                  {strikeData.put ? formatValue(strikeData.put.ask) : '--'}
+                </div>
+                <div className={`${cellBase} font-bold text-[var(--text-primary)]`}>
+                  {strikeData.put ? formatPercent(strikeData.put.iv) : '--'}
+                </div>
+                <div className={`${cellBase} text-tv-red font-medium`}>
+                  {strikeData.put ? formatValue(strikeData.put.delta, 3) : '--'}
+                </div>
+                <div className={`${cellBase} text-[var(--text-secondary)]`}>
+                  {strikeData.put ? formatValue(strikeData.put.gamma, 4) : '--'}
+                </div>
+                <div className={`${cellBase} ${strikeData.put?.theta !== null && strikeData.put?.theta !== undefined && Number(strikeData.put.theta) < 0 ? 'text-tv-red' : 'text-tv-green'}`}>
+                  {strikeData.put ? formatValue(strikeData.put.theta, 2) : '--'}
+                </div>
+                <div className={`${cellBase} text-[var(--text-secondary)]`}>
+                  {strikeData.put ? formatValue(strikeData.put.vega, 2) : '--'}
+                </div>
+                <div className={`${cellBase} text-[var(--text-secondary)]`}>
+                  {strikeData.put ? formatValue(strikeData.put.rho, 3) : '--'}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
