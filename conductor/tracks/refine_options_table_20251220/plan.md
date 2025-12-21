@@ -12,7 +12,7 @@
 - [x] Task: Ensure consistent decimal precision (2 for prices, 4 for Greeks) in the table display. <!-- id: cb148e1 -->
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Implement UI Refinements in OptionsTable' (Protocol in workflow.md) <!-- id: 79b27e5 -->
 
-## Phase 3: Final Verification and Cleanup
+## Phase 3: Final Verification and Cleanup [checkpoint: fc2fdcc]
 - [x] Task: Run full test suite and ensure >80% coverage for modified components. <!-- id: a73e1a3 -->
 - [x] Task: Perform a final lint check and fix any styling issues. <!-- id: 19a0919 -->
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Final Verification and Cleanup' (Protocol in workflow.md) <!-- id: b08748c -->
