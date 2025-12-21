@@ -290,10 +290,11 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
     });
 
     // Theme-aware colors
-    const gridColor = isDark ? 'rgba(54, 58, 69, 0.5)' : 'rgba(224, 227, 235, 0.8)';
+    const gridColor = isDark ? 'rgba(54, 58, 69, 0.3)' : 'rgba(224, 227, 235, 0.6)';
     const tickColor = isDark ? '#787b86' : '#787b86';
-    const tooltipBg = isDark ? 'rgba(30, 34, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+    const tooltipBg = isDark ? 'rgba(30, 34, 45, 0.98)' : 'rgba(255, 255, 255, 0.98)';
     const tooltipBorder = isDark ? '#434651' : '#e0e3eb';
+    const monoFont = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
     chartInstanceRef.current = new Chart(ctx, {
       type: 'candlestick',
@@ -317,6 +318,9 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        font: {
+          family: monoFont,
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -329,6 +333,15 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
             borderWidth: 1,
             padding: 12,
             displayColors: false,
+            titleFont: {
+              family: monoFont,
+              size: 12,
+              weight: 'bold',
+            },
+            bodyFont: {
+              family: monoFont,
+              size: 12,
+            },
             callbacks: {
               title: (items) => items.length > 0 ? labels[items[0].dataIndex] : '',
               label: (context) => {
@@ -384,13 +397,17 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
         scales: {
           x: {
             type: 'linear',
-            min: 0,
+            min: Math.max(0, cached.ohlcData.length - 60), // Start with last 60 candles
             max: cached.ohlcData.length - 1,
             ticks: {
               color: tickColor,
-              maxRotation: 45,
+              maxRotation: 0,
               autoSkip: true,
-              maxTicksLimit: 12,
+              maxTicksLimit: 10,
+              font: {
+                family: monoFont,
+                size: 10,
+              },
               callback: function (value) {
                 const idx = Math.round(value as number);
                 return idx >= 0 && idx < labels.length ? labels[idx] : '';
@@ -400,7 +417,13 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
           },
           y: {
             position: 'right',
-            ticks: { color: tickColor },
+            ticks: { 
+              color: tickColor,
+              font: {
+                family: monoFont,
+                size: 10,
+              },
+            },
             grid: { color: gridColor },
           },
         },
