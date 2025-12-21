@@ -7,6 +7,7 @@ import { CandlestickController, CandlestickElement, OhlcElement } from 'chartjs-
 import type { OHLCBar } from '../types';
 import { fetchOptionOhlc } from '../hooks/useTauriCommands';
 import { useTheme } from '../context/ThemeContext';
+import { calculatePriceChange } from '../utils/chartUtils';
 
 // Register Chart.js components including annotation and zoom plugins
 Chart.register(...registerables, CandlestickController, CandlestickElement, OhlcElement, annotationPlugin, zoomPlugin);
@@ -278,6 +279,7 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
       h: bar.high,
       l: bar.low,
       c: bar.close,
+      v: bar.volume,
     }));
 
     const ctx = chartRef.current.getContext('2d');
@@ -345,13 +347,21 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
             callbacks: {
               title: (items) => items.length > 0 ? labels[items[0].dataIndex] : '',
               label: (context) => {
-                const dataPoint = context.raw as { o: number; h: number; l: number; c: number };
+                const dataPoint = context.raw as { o: number; h: number; l: number; c: number; v?: number };
                 if (!dataPoint) return '';
+                
+                const idx = context.dataIndex;
+                const prevClose = idx > 0 ? (context.dataset.data[idx - 1] as { c: number }).c : null;
+                const change = calculatePriceChange(dataPoint.c, prevClose);
+                const changeSign = change >= 0 ? '+' : '';
+
                 return [
                   `O: ${dataPoint.o.toFixed(2)}`,
                   `H: ${dataPoint.h.toFixed(2)}`,
                   `L: ${dataPoint.l.toFixed(2)}`,
                   `C: ${dataPoint.c.toFixed(2)}`,
+                  `V: ${dataPoint.v?.toLocaleString() ?? '--'}`,
+                  `Change: ${changeSign}${change.toFixed(2)}%`,
                 ];
               },
             },
