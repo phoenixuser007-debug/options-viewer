@@ -18,5 +18,5 @@
 
 ## Phase 4: Verification and Cleanup
 - [x] Task: Run full test suite and ensure >80% coverage for modified modal logic. <!-- id: 61d0ec0 -->
-- [x] Task: Perform a final lint check and fix any styling issues. <!-- id: 61d0ec0 -->
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Verification and Cleanup' (Protocol in workflow.md)
+- [x] Task: Perform a final lint check and fix any styling issues. <!-- id: 5000fa0 -->
+- [~] Task: Conductor - User Manual Verification 'Phase 4: Verification and Cleanup' (Protocol in workflow.md)
