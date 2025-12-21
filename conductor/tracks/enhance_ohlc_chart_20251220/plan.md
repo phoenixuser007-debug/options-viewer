@@ -10,11 +10,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: UI & Modal Refinement' (Protocol in workflow.md) <!-- id: 63d4057 -->
 
 ## Phase 3: Interactive Features
-- [ ] Task: Write tests for chart data transformation logic (e.g., price change calculation).
-- [ ] Task: Configure `chartjs-plugin-zoom` in the `OHLCModal` to enable zooming and panning.
-- [ ] Task: Implement enhanced tooltip logic to display OHLCV and price change percentages.
-- [ ] Task: (Optional/If Data Available) Integrate Greek data into the tooltip display.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Interactive Features' (Protocol in workflow.md)
+- [x] Task: Write tests for chart data transformation logic (e.g., price change calculation). <!-- id: 19a5cd4 -->
+- [x] Task: Configure `chartjs-plugin-zoom` in the `OHLCModal` to enable zooming and panning. <!-- id: 8315f2c -->
+- [x] Task: Implement enhanced tooltip logic to display OHLCV and price change percentages. <!-- id: 37be46c -->
+- [x] Task: (Optional/If Data Available) Integrate Greek data into the tooltip display. (Skipped - Data not available) <!-- id: cb148e1 -->
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Interactive Features' (Protocol in workflow.md)
 
 ## Phase 4: Verification and Cleanup
 - [ ] Task: Run full test suite and ensure >80% coverage for modified modal logic.
