@@ -5,9 +5,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Environment' (Protocol in workflow.md) <!-- id: 4241392 -->
 
 ## Phase 2: UI & Modal Refinement
-- [ ] Task: Update `OHLCModal` Tailwind classes to expand the modal to ~90% of screen dimensions.
-- [ ] Task: Refine modal styling (borders, background, typography) to match "Data-Dense Modern" guidelines.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: UI & Modal Refinement' (Protocol in workflow.md)
+- [x] Task: Update `OHLCModal` Tailwind classes to expand the modal to ~90% of screen dimensions. <!-- id: 6cc4b14 -->
+- [x] Task: Refine modal styling (borders, background, typography) to match "Data-Dense Modern" guidelines. <!-- id: 8315f2c -->
+- [~] Task: Conductor - User Manual Verification 'Phase 2: UI & Modal Refinement' (Protocol in workflow.md)
 
 ## Phase 3: Interactive Features
 - [ ] Task: Write tests for chart data transformation logic (e.g., price change calculation).
