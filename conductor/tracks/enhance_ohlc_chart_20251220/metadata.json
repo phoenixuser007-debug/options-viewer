@@ -1,0 +1,8 @@
+{
+  "track_id": "enhance_ohlc_chart_20251220",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2025-12-20T21:20:00Z",
+  "updated_at": "2025-12-20T21:20:00Z",
+  "description": "Enhance Option OHLC Chart Modal with better UI, zoom/pan, and detailed tooltips."
+}

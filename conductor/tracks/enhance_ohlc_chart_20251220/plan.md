@@ -1,8 +1,8 @@
 # Track Plan: Enhance Option OHLC Chart Modal
 
 ## Phase 1: Preparation and Environment
-- [x] Task: Verify that `chartjs-plugin-zoom` is correctly integrated and initialized in the project. <!-- id: bdb0728 -->
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Environment' (Protocol in workflow.md)
+- [x] Task: Verify that `chartjs-plugin-zoom` is correctly integrated and initialized in the project. <!-- id: 616d1d3 -->
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Environment' (Protocol in workflow.md)
 
 ## Phase 2: UI & Modal Refinement
 - [ ] Task: Update `OHLCModal` Tailwind classes to expand the modal to ~90% of screen dimensions.

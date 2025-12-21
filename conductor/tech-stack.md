@@ -18,3 +18,4 @@
 ## Cross-Cutting
 - **Tauri IPC:** Secure communication bridge between the Rust backend and React frontend.
 - **Financial APIs:** Logic for interfacing with external data providers (e.g., TradingView or similar).
+- **Vitest & React Testing Library:** Modern testing stack for unit and component verification.
