@@ -14,5 +14,5 @@
 
 ## Phase 3: Final Verification and Cleanup
 - [x] Task: Run full test suite and ensure >80% coverage for modified components. <!-- id: a73e1a3 -->
-- [ ] Task: Perform a final lint check and fix any styling issues.
+- [~] Task: Perform a final lint check and fix any styling issues.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Final Verification and Cleanup' (Protocol in workflow.md)

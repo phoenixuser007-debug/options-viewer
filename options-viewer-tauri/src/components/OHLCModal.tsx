@@ -306,12 +306,12 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
             up: '#089981',
             down: '#f23645',
             unchanged: '#2962ff',
-          } as any,
+          } as unknown as string,
           backgroundColor: {
             up: 'rgba(8, 153, 129, 0.3)',
             down: 'rgba(242, 54, 69, 0.3)',
             unchanged: 'rgba(41, 98, 255, 0.3)',
-          } as any,
+          } as unknown as string,
         }],
       },
       options: {
