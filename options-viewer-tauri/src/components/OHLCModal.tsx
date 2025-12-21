@@ -527,26 +527,26 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
 
       {/* Modal */}
       <div className="
-        relative w-full max-w-5xl
+        relative w-[95vw] h-[90vh] flex flex-col
         bg-[var(--bg-secondary)] border border-[var(--border-color)]
         rounded-2xl shadow-2xl
         animate-slide-up
         overflow-hidden
       ">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-color)]">
+        <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)]">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">
               {strike.toLocaleString()}
             </h2>
             <span className={`
-              px-3 py-1.5 rounded-lg text-base font-bold
+              px-2 py-1 rounded-lg text-sm font-bold
               ${currentType === 'C' ? 'bg-tv-green/20 text-tv-green' : 'bg-tv-red/20 text-tv-red'}
             `}>
               {currentType === 'C' ? 'CE' : 'PE'}
             </span>
             <span className="text-[var(--text-muted)]">|</span>
-            <span className="text-base text-[var(--text-secondary)]">
+            <span className="text-sm text-[var(--text-secondary)]">
               {formatExpiration(expiration)}
             </span>
           </div>
@@ -554,31 +554,31 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
           <button
             onClick={onClose}
             className="
-              p-2.5 rounded-lg
+              p-2 rounded-lg
               text-[var(--text-muted)] hover:text-[var(--text-primary)]
               hover:bg-[var(--bg-hover)]
               transition-colors
             "
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-6 px-6 py-4 bg-[var(--bg-tertiary)]/50 border-b border-[var(--border-color)]">
+        <div className="flex-none flex items-center gap-6 px-6 py-3 bg-[var(--bg-tertiary)]/50 border-b border-[var(--border-color)]">
           {/* Type Toggle */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-[var(--text-muted)] uppercase">Type</span>
-            <div className="flex gap-1.5 p-1.5 bg-[var(--bg-tertiary)] rounded-lg">
+            <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Type</span>
+            <div className="flex gap-1 p-1 bg-[var(--bg-tertiary)] rounded-lg">
               <button
                 onClick={() => handleTypeToggle('C')}
                 disabled={loading}
                 className={`
-                  px-4 py-2 rounded-lg text-base font-semibold transition-all
+                  px-3 py-1 rounded-md text-xs font-semibold transition-all
                   ${currentType === 'C'
-                    ? 'bg-tv-green text-white'
+                    ? 'bg-tv-green text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-tv-green'
                   }
                   disabled:opacity-50
@@ -590,9 +590,9 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
                 onClick={() => handleTypeToggle('P')}
                 disabled={loading}
                 className={`
-                  px-4 py-2 rounded-lg text-base font-semibold transition-all
+                  px-3 py-1 rounded-md text-xs font-semibold transition-all
                   ${currentType === 'P'
-                    ? 'bg-tv-red text-white'
+                    ? 'bg-tv-red text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-tv-red'
                   }
                   disabled:opacity-50
@@ -603,19 +603,19 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
             </div>
           </div>
 
-          <div className="w-px h-8 bg-[var(--border-color)]" />
+          <div className="w-px h-6 bg-[var(--border-color)]" />
 
           {/* Timeframe Toggle */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-[var(--text-muted)] uppercase">TF</span>
-            <div className="flex gap-1.5 p-1.5 bg-[var(--bg-tertiary)] rounded-lg">
+            <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">TF</span>
+            <div className="flex gap-1 p-1 bg-[var(--bg-tertiary)] rounded-lg">
               <button
                 onClick={() => handleTimeframeChange('5')}
                 disabled={loading}
                 className={`
-                  px-4 py-2 rounded-lg text-base font-semibold transition-all
+                  px-3 py-1 rounded-md text-xs font-semibold transition-all
                   ${timeframe === '5'
-                    ? 'bg-tv-blue text-white'
+                    ? 'bg-tv-blue text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-tv-blue'
                   }
                   disabled:opacity-50
@@ -627,9 +627,9 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
                 onClick={() => handleTimeframeChange('15')}
                 disabled={loading}
                 className={`
-                  px-4 py-2 rounded-lg text-base font-semibold transition-all
+                  px-3 py-1 rounded-md text-xs font-semibold transition-all
                   ${timeframe === '15'
-                    ? 'bg-tv-blue text-white'
+                    ? 'bg-tv-blue text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-tv-blue'
                   }
                   disabled:opacity-50
@@ -640,7 +640,7 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
             </div>
           </div>
 
-          <div className="w-px h-8 bg-[var(--border-color)]" />
+          <div className="w-px h-6 bg-[var(--border-color)]" />
 
           {/* Reset Zoom */}
           <button
@@ -654,7 +654,7 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
             }}
             disabled={loading}
             className="
-              px-4 py-2 rounded-lg text-base font-medium
+              px-3 py-1 rounded-md text-xs font-medium
               bg-[var(--bg-tertiary)] text-[var(--text-secondary)]
               hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]
               transition-colors disabled:opacity-50
@@ -665,21 +665,21 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
         </div>
 
         {/* Chart Container */}
-        <div className="relative h-[500px] p-6">
+        <div className="flex-1 relative p-4 min-h-0">
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--bg-secondary)]/80 z-10">
-              <div className="w-12 h-12 border-4 border-[var(--border-light)] border-t-tv-blue rounded-full animate-spin" />
-              <p className="text-base text-[var(--text-secondary)]">Loading market data...</p>
+              <div className="w-10 h-10 border-3 border-[var(--border-light)] border-t-tv-blue rounded-full animate-spin" />
+              <p className="text-sm text-[var(--text-secondary)]">Loading market data...</p>
             </div>
           )}
 
           {error && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="flex items-center gap-4 px-6 py-4 rounded-lg bg-tv-red/10 border border-tv-red/20 text-tv-red">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-tv-red/10 border border-tv-red/20 text-tv-red">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p className="text-base font-medium">{error}</p>
+                <p className="text-sm font-medium">{error}</p>
               </div>
             </div>
           )}
