@@ -1,13 +1,32 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { ExpirySelector } from './components/ExpirySelector';
 import { OptionsTable } from './components/OptionsTable';
 import { OHLCModal } from './components/OHLCModal';
 import { SymbolSearch } from './components/SymbolSearch';
 import { ThemeToggle } from './components/ThemeToggle';
-import { fetchOptions, fetchPrice, fetchExpirations } from './hooks/useTauriCommands';
-import type { ExpirationInfo, StrikeData, OptionData, OptionsResponse, SymbolSearchResult } from './types';
+import { fetchOptions, fetchPrice, fetchExpirations, startPriceStream, stopPriceStream } from './hooks/useTauriCommands';
+import type { ExpirationInfo, StrikeData, OptionData, OptionsResponse, SymbolSearchResult, PriceUpdate } from './types';
 
 const COLUMN_NAMES = ['ask', 'bid', 'currency', 'delta', 'expiration', 'gamma', 'iv', 'option-type', 'pricescale', 'rho', 'root', 'strike', 'theoPrice', 'theta', 'vega', 'bid_iv', 'ask_iv'];
+
+function normalizeSymbolForMatch(value: string): string {
+  return value.toUpperCase().split('|')[0].trim();
+}
+
+function parseOptionSymbol(symbol: string): { optionType: 'C' | 'P'; strike: number } | null {
+  const normalized = normalizeSymbolForMatch(symbol);
+  const noExchange = normalized.includes(':') ? normalized.split(':')[1] : normalized;
+  const match = noExchange.match(/([CP])(\d+(?:\.\d+)?)$/);
+  if (!match) return null;
+
+  const optionType = match[1] as 'C' | 'P';
+  const strike = Number(match[2]);
+  if (!Number.isFinite(strike)) return null;
+
+  return { optionType, strike };
+}
+
 
 function App() {
   // Symbol state
@@ -19,11 +38,18 @@ function App() {
   const [spotPrice, setSpotPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [strikesReady, setStrikesReady] = useState(false);
+  const strikesRef = useRef<StrikeData[]>([]);
+  const tvSymbolsRef = useRef<string[]>([]);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStrike, setModalStrike] = useState<number>(0);
   const [modalOptionType, setModalOptionType] = useState<'C' | 'P'>('C');
+
+  useEffect(() => {
+    strikesRef.current = strikes;
+  }, [strikes]);
 
   // Build symbol for OHLC modal
   const modalSymbol = useMemo(() => {
@@ -40,6 +66,8 @@ function App() {
     setExpirations([]);
     setSelectedExpiration(null);
     setStrikes([]);
+    setStrikesReady(false);
+    tvSymbolsRef.current = [];
     setSpotPrice(null);
     setError(null);
   }, []);
@@ -76,6 +104,8 @@ function App() {
     const loadData = async () => {
       setLoading(true);
       setError(null);
+      setStrikesReady(false);
+      tvSymbolsRef.current = [];
 
       try {
         const [optionsData, priceData] = await Promise.all([
@@ -100,14 +130,109 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedExpiration, selectedSymbol]);
 
+  // Price streaming
+  useEffect(() => {
+    let unlistenPrice: (() => void) | null = null;
+    let unlistenError: (() => void) | null = null;
+    let disposed = false;
+
+    const setup = async () => {
+      try {
+        unlistenPrice = await listen<PriceUpdate>('price-update', (event) => {
+          const update = event.payload;
+          const ticker = normalizeSymbolForMatch(selectedSymbol.includes(':')
+            ? selectedSymbol.toUpperCase()
+            : `NSE:${selectedSymbol.toUpperCase()}`);
+
+          const updateSymbol = normalizeSymbolForMatch(update.symbol);
+
+          if (updateSymbol === ticker || updateSymbol.startsWith(`${ticker}:`) || updateSymbol.startsWith(`${ticker}|`)) {
+            setSpotPrice(update.price);
+            return;
+          }
+
+          const parsedOption = parseOptionSymbol(updateSymbol);
+          if (!parsedOption) return;
+
+          // Use lp as bid fallback when bid/ask aren't in the update (NSE often only sends lp)
+          const ltp = update.price > 0 ? update.price : null;
+          const nextBid = update.bid ?? ltp;
+          const nextAsk = update.ask ?? null;
+          if (nextBid === null && nextAsk === null) return;
+
+          setStrikes((prev) => {
+            let changed = false;
+            const updated = prev.map((row) => {
+              if (row.strike !== parsedOption.strike) return row;
+
+              if (parsedOption.optionType === 'C' && row.call) {
+                const call = {
+                  ...row.call,
+                  bid: nextBid ?? row.call.bid,
+                  ask: nextAsk ?? row.call.ask,
+                };
+                changed = true;
+                return { ...row, call };
+              }
+
+              if (parsedOption.optionType === 'P' && row.put) {
+                const put = {
+                  ...row.put,
+                  bid: nextBid ?? row.put.bid,
+                  ask: nextAsk ?? row.put.ask,
+                };
+                changed = true;
+                return { ...row, put };
+              }
+
+              return row;
+            });
+
+            return changed ? updated : prev;
+          });
+        });
+
+        unlistenError = await listen<string>('price-error', (event) => {
+          console.error('Price stream error:', event.payload);
+        });
+
+        if (!disposed) {
+          const base = selectedSymbol.includes(':') ? selectedSymbol.toUpperCase() : `NSE:${selectedSymbol.toUpperCase()}`;
+          const streamSymbols = [base, ...tvSymbolsRef.current];
+          await startPriceStream(streamSymbols);
+        }
+      } catch (err) {
+        console.error('Error starting price stream:', err);
+      }
+    };
+
+    if (strikesReady && selectedExpiration) {
+      setup();
+    }
+
+    return () => {
+      disposed = true;
+      if (unlistenPrice) {
+        unlistenPrice();
+      }
+      if (unlistenError) {
+        unlistenError();
+      }
+      stopPriceStream().catch((err) => {
+        console.error('Error stopping price stream:', err);
+      });
+    };
+  }, [selectedSymbol, selectedExpiration, strikesReady]);
+
   const processOptionsData = useCallback((data: OptionsResponse, price: number | null) => {
     if (!data.symbols || data.symbols.length === 0) {
       setError('No options data available');
       return;
     }
 
-    // Build strike map
+    // Build strike map + symbol lookup (strike_C/strike_P → actual TV symbol)
     const strikeMap = new Map<number, StrikeData>();
+    const tvSymbolMap = new Map<string, string>();
 
     data.symbols.forEach((option) => {
       const values = option.f;
@@ -129,8 +254,10 @@ function App() {
 
       if (optionType === 'call') {
         strikeMap.get(strike)!.call = optionData;
+        tvSymbolMap.set(`${strike}_C`, option.s);
       } else if (optionType === 'put') {
         strikeMap.get(strike)!.put = optionData;
+        tvSymbolMap.set(`${strike}_P`, option.s);
       }
     });
 
@@ -146,7 +273,19 @@ function App() {
 
     // Filter 10 strikes around current price
     const filteredStrikes = filterStrikesAroundPrice(allStrikes, currentPrice, 10);
+
+    // Only stream TV symbols for the visible strikes (~20 symbols max)
+    const filteredTvSymbols: string[] = [];
+    for (const row of filteredStrikes) {
+      const c = tvSymbolMap.get(`${row.strike}_C`);
+      const p = tvSymbolMap.get(`${row.strike}_P`);
+      if (c) filteredTvSymbols.push(c);
+      if (p) filteredTvSymbols.push(p);
+    }
+    tvSymbolsRef.current = filteredTvSymbols;
+
     setStrikes(filteredStrikes);
+    setStrikesReady(true);
   }, []);
 
   const estimatePrice = (strikes: StrikeData[]): number => {

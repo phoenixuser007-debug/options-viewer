@@ -26,3 +26,11 @@ export async function fetchOptionOhlc(symbol: string, bars: number = 30, timefra
 export async function searchSymbol(query: string): Promise<SymbolSearchResponse> {
     return invoke<SymbolSearchResponse>('search_symbol', { query });
 }
+
+export async function startPriceStream(symbols: string[]): Promise<void> {
+    return invoke<void>('start_price_stream', { symbols });
+}
+
+export async function stopPriceStream(): Promise<void> {
+    return invoke<void>('stop_price_stream');
+}

@@ -42,6 +42,19 @@ export interface PriceResponse {
     volume: number;
 }
 
+export interface PriceUpdate {
+    symbol: string;
+    price: number;
+    bid?: number | null;
+    ask?: number | null;
+    change: number;
+    change_abs: number;
+    high: number;
+    low: number;
+    open: number;
+    volume: number;
+}
+
 // Expiration types
 export interface ExpirationInfo {
     value: number;

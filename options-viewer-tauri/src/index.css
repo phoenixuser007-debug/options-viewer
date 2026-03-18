@@ -58,6 +58,19 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
   }
+
+  --animate-flash-green: flash-green 0.6s ease-out forwards;
+  --animate-flash-red:   flash-red   0.6s ease-out forwards;
+}
+
+@keyframes flash-green {
+  0% { background-color: rgba(8, 153, 129, 0.8); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: rgba(242, 54, 69, 0.8); }
+  100% { background-color: transparent; }
 }
 
 /* Base styles */

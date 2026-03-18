@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { StrikeData } from '../types';
 
 interface OptionsTableProps {
@@ -15,6 +15,35 @@ function formatValue(value: number | null, decimals = 2): string {
 function formatPercent(value: number | null): string {
   if (value === null || value === undefined) return '--';
   return (Number(value) * 100).toFixed(1) + '%';
+}
+
+function FlashCell({ value, className }: { value: string; className: string; color?: string }) {
+  const [flash, setFlash] = useState<'green' | 'red' | null>(null);
+  const prevValue = useRef<string>('');
+
+  useEffect(() => {
+    const prev = prevValue.current;
+    prevValue.current = value;
+    if (prev === '' || prev === value) return;
+
+    const prevNum = parseFloat(prev);
+    const nextNum = parseFloat(value);
+    if (isNaN(prevNum) || isNaN(nextNum)) return;
+
+    setFlash(nextNum > prevNum ? 'green' : 'red');
+    const timer = setTimeout(() => setFlash(null), 600);
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  const animStyle = flash
+    ? { animation: `flash-${flash} 0.6s ease-out forwards` }
+    : undefined;
+
+  return (
+    <div className={className} style={animStyle}>
+      {value}
+    </div>
+  );
 }
 
 const CALL_HEADERS = ['Rho', 'Vega', 'Theta', 'Gamma', 'Delta', 'IV', 'Ask', 'Bid'];
@@ -76,30 +105,46 @@ export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTa
                 onClick={() => strikeData.call && onOptionClick(strikeData.strike, 'C')}
                 className={`col-span-8 grid grid-cols-8 items-center h-full cursor-pointer transition-colors hover:bg-tv-green/10 ${callBg} ${strikeData.call ? '' : 'cursor-default'}`}
               >
-                <div className={`${cellBase} text-[var(--text-secondary)]`}>
-                  {strikeData.call ? formatValue(strikeData.call.rho, 4) : '--'}
-                </div>
-                <div className={`${cellBase} text-[var(--text-secondary)]`}>
-                  {strikeData.call ? formatValue(strikeData.call.vega, 4) : '--'}
-                </div>
-                <div className={`${cellBase} ${strikeData.call?.theta !== null && strikeData.call?.theta !== undefined && Number(strikeData.call.theta) < 0 ? 'text-tv-red' : 'text-tv-green'}`}>
-                  {strikeData.call ? formatValue(strikeData.call.theta, 4) : '--'}
-                </div>
-                <div className={`${cellBase} text-[var(--text-secondary)]`}>
-                  {strikeData.call ? formatValue(strikeData.call.gamma, 4) : '--'}
-                </div>
-                <div className={`${cellBase} text-tv-green font-medium`}>
-                  {strikeData.call ? formatValue(strikeData.call.delta, 4) : '--'}
-                </div>
-                <div className={`${cellBase} font-bold text-[var(--text-primary)]`}>
-                  {strikeData.call ? formatPercent(strikeData.call.iv) : '--'}
-                </div>
-                <div className={`${cellBase} font-semibold text-tv-green`}>
-                  {strikeData.call ? formatValue(strikeData.call.ask, 2) : '--'}
-                </div>
-                <div className={`${cellBase} font-semibold text-tv-green`}>
-                  {strikeData.call ? formatValue(strikeData.call.bid, 2) : '--'}
-                </div>
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.rho, 4) : '--'}
+                  className={`${cellBase} text-[var(--text-secondary)]`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.vega, 4) : '--'}
+                  className={`${cellBase} text-[var(--text-secondary)]`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.theta, 4) : '--'}
+                  className={`${cellBase} ${strikeData.call?.theta !== null && strikeData.call?.theta !== undefined && Number(strikeData.call.theta) < 0 ? 'text-tv-red' : 'text-tv-green'}`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.gamma, 4) : '--'}
+                  className={`${cellBase} text-[var(--text-secondary)]`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.delta, 4) : '--'}
+                  className={`${cellBase} text-tv-green font-medium`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatPercent(strikeData.call.iv) : '--'}
+                  className={`${cellBase} font-bold text-[var(--text-primary)]`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.ask, 2) : '--'}
+                  className={`${cellBase} font-semibold text-tv-green`}
+                  color="green"
+                />
+                <FlashCell
+                  value={strikeData.call ? formatValue(strikeData.call.bid, 2) : '--'}
+                  className={`${cellBase} font-semibold text-tv-green`}
+                  color="green"
+                />
               </div>
 
               {/* Strike */}
@@ -112,30 +157,46 @@ export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTa
                 onClick={() => strikeData.put && onOptionClick(strikeData.strike, 'P')}
                 className={`col-span-8 grid grid-cols-8 items-center h-full cursor-pointer transition-colors hover:bg-tv-red/10 ${putBg} ${strikeData.put ? '' : 'cursor-default'}`}
               >
-                <div className={`${cellBase} font-semibold text-tv-red`}>
-                  {strikeData.put ? formatValue(strikeData.put.bid, 2) : '--'}
-                </div>
-                <div className={`${cellBase} font-semibold text-tv-red`}>
-                  {strikeData.put ? formatValue(strikeData.put.ask, 2) : '--'}
-                </div>
-                <div className={`${cellBase} font-bold text-[var(--text-primary)]`}>
-                  {strikeData.put ? formatPercent(strikeData.put.iv) : '--'}
-                </div>
-                <div className={`${cellBase} text-tv-red font-medium`}>
-                  {strikeData.put ? formatValue(strikeData.put.delta, 4) : '--'}
-                </div>
-                <div className={`${cellBase} text-[var(--text-secondary)]`}>
-                  {strikeData.put ? formatValue(strikeData.put.gamma, 4) : '--'}
-                </div>
-                <div className={`${cellBase} ${strikeData.put?.theta !== null && strikeData.put?.theta !== undefined && Number(strikeData.put.theta) < 0 ? 'text-tv-red' : 'text-tv-green'}`}>
-                  {strikeData.put ? formatValue(strikeData.put.theta, 4) : '--'}
-                </div>
-                <div className={`${cellBase} text-[var(--text-secondary)]`}>
-                  {strikeData.put ? formatValue(strikeData.put.vega, 4) : '--'}
-                </div>
-                <div className={`${cellBase} text-[var(--text-secondary)]`}>
-                  {strikeData.put ? formatValue(strikeData.put.rho, 4) : '--'}
-                </div>
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.bid, 2) : '--'}
+                  className={`${cellBase} font-semibold text-tv-red`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.ask, 2) : '--'}
+                  className={`${cellBase} font-semibold text-tv-red`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatPercent(strikeData.put.iv) : '--'}
+                  className={`${cellBase} font-bold text-[var(--text-primary)]`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.delta, 4) : '--'}
+                  className={`${cellBase} text-tv-red font-medium`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.gamma, 4) : '--'}
+                  className={`${cellBase} text-[var(--text-secondary)]`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.theta, 4) : '--'}
+                  className={`${cellBase} ${strikeData.put?.theta !== null && strikeData.put?.theta !== undefined && Number(strikeData.put.theta) < 0 ? 'text-tv-red' : 'text-tv-green'}`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.vega, 4) : '--'}
+                  className={`${cellBase} text-[var(--text-secondary)]`}
+                  color="red"
+                />
+                <FlashCell
+                  value={strikeData.put ? formatValue(strikeData.put.rho, 4) : '--'}
+                  className={`${cellBase} text-[var(--text-secondary)]`}
+                  color="red"
+                />
               </div>
             </div>
           );
