@@ -53,6 +53,12 @@ export interface PriceUpdate {
     low: number;
     open: number;
     volume: number;
+    delta?: number | null;
+    gamma?: number | null;
+    theta?: number | null;
+    vega?: number | null;
+    rho?: number | null;
+    iv?: number | null;
 }
 
 // Expiration types
@@ -113,6 +119,7 @@ export interface OptionData {
     vega: number | null;
     bid_iv: number | null;
     ask_iv: number | null;
+    volume: number | null;
 }
 
 export interface StrikeData {

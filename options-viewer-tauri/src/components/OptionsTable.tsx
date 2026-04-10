@@ -46,45 +46,82 @@ function FlashCell({ value, className }: { value: string; className: string; col
   );
 }
 
-const CALL_HEADERS = ['Rho', 'Vega', 'Theta', 'Gamma', 'Delta', 'IV', 'Ask', 'Bid'];
-const PUT_HEADERS = ['Bid', 'Ask', 'IV', 'Delta', 'Gamma', 'Theta', 'Vega', 'Rho'];
+const CALL_HEADERS = ['Rho', 'Vega', 'Theta', 'Gamma', 'Delta', 'IV', 'Ask', 'Bid', 'Volume'];
+const PUT_HEADERS = ['Volume', 'Bid', 'Ask', 'IV', 'Delta', 'Gamma', 'Theta', 'Vega', 'Rho'];
+
+function formatVolume(volume: number | null): string {
+  if (volume === null || volume === undefined) return '--';
+  if (volume >= 1_000_000) return `${(volume / 1_000_000).toFixed(1)}M`;
+  if (volume >= 1_000) return `${(volume / 1_000).toFixed(0)}K`;
+  return volume.toString();
+}
+
+function VolumeBar({ volume, maxVolume, side }: { volume: number | null; maxVolume: number; side: 'call' | 'put' }) {
+  const pct = volume !== null && volume !== undefined && maxVolume > 0
+    ? Math.min(100, (volume / maxVolume) * 100)
+    : 0;
+  const barColor = side === 'call' ? 'bg-tv-green/25' : 'bg-tv-red/25';
+  const justify = side === 'call' ? 'justify-end' : 'justify-start';
+  const barAlign = side === 'call' ? 'right-0' : 'left-0';
+
+  return (
+    <div className={`relative px-1 overflow-hidden h-full flex items-center ${justify}`}>
+      {pct > 0 && (
+        <div
+          className={`absolute top-0 bottom-0 ${barColor} ${barAlign}`}
+          style={{ width: `${pct}%` }}
+        />
+      )}
+      <span className="relative z-10 font-mono text-[10px] text-[var(--text-secondary)]">
+        {formatVolume(volume)}
+      </span>
+    </div>
+  );
+}
 
 // Base cell styles
 const cellBase = 'px-1 overflow-hidden truncate font-mono text-right';
 
 export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTableProps) {
-  const rows = useMemo(() => {
-    return strikes.map((strikeData) => {
+  const { rows, maxCallVolume, maxPutVolume } = useMemo(() => {
+    let maxCall = 0;
+    let maxPut = 0;
+    for (const s of strikes) {
+      if (s.call?.volume) maxCall = Math.max(maxCall, s.call.volume);
+      if (s.put?.volume) maxPut = Math.max(maxPut, s.put.volume);
+    }
+    const rows = strikes.map((strikeData) => {
       const isATM = Math.abs(strikeData.strike - currentPrice) < 50;
       const isITMCall = strikeData.strike < currentPrice;
       const isITMPut = strikeData.strike > currentPrice;
       return { strikeData, isATM, isITMCall, isITMPut };
     });
+    return { rows, maxCallVolume: maxCall, maxPutVolume: maxPut };
   }, [strikes, currentPrice]);
 
   return (
     <div className="h-full flex flex-col rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] overflow-hidden">
       {/* Main Header */}
-      <div className="flex-none grid grid-cols-17 bg-[var(--bg-tertiary)] border-b border-[var(--border-color)]">
-        <div className="col-span-8 px-2 py-2 text-center font-bold text-tv-green text-sm truncate">
+      <div className="flex-none grid grid-cols-19 bg-[var(--bg-tertiary)] border-b border-[var(--border-color)]">
+        <div className="col-span-9 px-2 py-2 text-center font-bold text-tv-green text-sm truncate">
           CALLS
         </div>
         <div className="col-span-1 px-2 py-2 text-center font-bold text-tv-purple text-sm bg-[var(--bg-hover)] truncate">
           STRIKE
         </div>
-        <div className="col-span-8 px-2 py-2 text-center font-bold text-tv-red text-sm truncate">
+        <div className="col-span-9 px-2 py-2 text-center font-bold text-tv-red text-sm truncate">
           PUTS
         </div>
       </div>
 
       {/* Sub Header */}
-      <div className="flex-none grid grid-cols-17 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs uppercase tracking-wider border-b border-[var(--border-color)]">
+      <div className="flex-none grid grid-cols-19 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs uppercase tracking-wider border-b border-[var(--border-color)]">
         {CALL_HEADERS.map((h, i) => (
-          <div key={`ch-${i}`} className="px-1 py-2 text-right font-semibold truncate">{h}</div>
+          <div key={`ch-${i}`} className={`px-1 py-2 font-semibold truncate ${h === 'Volume' ? 'text-center' : 'text-right'}`}>{h}</div>
         ))}
         <div className="px-1 py-2 text-center font-semibold bg-[var(--bg-hover)] truncate">Price</div>
         {PUT_HEADERS.map((h, i) => (
-          <div key={`ph-${i}`} className="px-1 py-2 text-right font-semibold truncate">{h}</div>
+          <div key={`ph-${i}`} className={`px-1 py-2 font-semibold truncate ${h === 'Volume' ? 'text-center' : 'text-right'}`}>{h}</div>
         ))}
       </div>
 
@@ -98,12 +135,12 @@ export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTa
           return (
             <div
               key={strikeData.strike}
-              className={`flex-1 min-h-[40px] grid grid-cols-17 items-center border-b border-[var(--border-color)] text-xs transition-colors font-mono ${rowBg}`}
+              className={`flex-1 min-h-[40px] grid grid-cols-19 items-center border-b border-[var(--border-color)] text-xs transition-colors font-mono ${rowBg}`}
             >
               {/* Call side - entire section clickable */}
               <div
                 onClick={() => strikeData.call && onOptionClick(strikeData.strike, 'C')}
-                className={`col-span-8 grid grid-cols-8 items-center h-full cursor-pointer transition-colors hover:bg-tv-green/10 ${callBg} ${strikeData.call ? '' : 'cursor-default'}`}
+                className={`col-span-9 grid grid-cols-9 items-center h-full cursor-pointer transition-colors hover:bg-tv-green/10 ${callBg} ${strikeData.call ? '' : 'cursor-default'}`}
               >
                 <FlashCell
                   value={strikeData.call ? formatValue(strikeData.call.rho, 4) : '--'}
@@ -145,6 +182,7 @@ export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTa
                   className={`${cellBase} font-semibold text-tv-green`}
                   color="green"
                 />
+                <VolumeBar volume={strikeData.call?.volume ?? null} maxVolume={maxCallVolume} side="call" />
               </div>
 
               {/* Strike */}
@@ -155,8 +193,9 @@ export function OptionsTable({ strikes, currentPrice, onOptionClick }: OptionsTa
               {/* Put side - entire section clickable */}
               <div
                 onClick={() => strikeData.put && onOptionClick(strikeData.strike, 'P')}
-                className={`col-span-8 grid grid-cols-8 items-center h-full cursor-pointer transition-colors hover:bg-tv-red/10 ${putBg} ${strikeData.put ? '' : 'cursor-default'}`}
+                className={`col-span-9 grid grid-cols-9 items-center h-full cursor-pointer transition-colors hover:bg-tv-red/10 ${putBg} ${strikeData.put ? '' : 'cursor-default'}`}
               >
+                <VolumeBar volume={strikeData.put?.volume ?? null} maxVolume={maxPutVolume} side="put" />
                 <FlashCell
                   value={strikeData.put ? formatValue(strikeData.put.bid, 2) : '--'}
                   className={`${cellBase} font-semibold text-tv-red`}

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { Chart, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import 'chartjs-adapter-date-fns';
 import { CandlestickController, CandlestickElement, OhlcElement } from 'chartjs-chart-financial';
-import type { OHLCBar } from '../types';
+import type { OHLCBar, PriceUpdate } from '../types';
 import { fetchOptionOhlc } from '../hooks/useTauriCommands';
 import { useTheme } from '../context/ThemeContext';
 import { calculatePriceChange } from '../utils/chartUtils';
@@ -465,18 +466,14 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
     setError(null);
     cacheRef.current = { C: null, P: null, timeframe: null };
 
+    const barCount = tf === '5' ? 1000 : 400;
+
     try {
-      const barCount = tf === '5' ? 1000 : 400;
-      const ceSymbol = getSymbolForType('C');
-      const peSymbol = getSymbolForType('P');
+      // Load clicked type first — render immediately without waiting for the other side
+      const initialData = await fetchOptionOhlc(getSymbolForType(initialType), barCount, tf)
+        .catch(() => ({ ohlc_data: [], daily_data: [] }));
 
-      const [ceData, peData] = await Promise.all([
-        fetchOptionOhlc(ceSymbol, barCount, tf).catch(() => ({ ohlc_data: [], daily_data: [] })),
-        fetchOptionOhlc(peSymbol, barCount, tf).catch(() => ({ ohlc_data: [], daily_data: [] }))
-      ]);
-
-      cacheRef.current.C = processData(ceData);
-      cacheRef.current.P = processData(peData);
+      cacheRef.current[initialType] = processData(initialData);
       cacheRef.current.timeframe = tf;
 
       if (cacheRef.current[initialType]) {
@@ -490,6 +487,12 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
     } finally {
       setLoading(false);
     }
+
+    // Load the other side silently in the background so switching type is instant
+    const otherType = initialType === 'C' ? 'P' : 'C';
+    fetchOptionOhlc(getSymbolForType(otherType), barCount, tf)
+      .then(data => { cacheRef.current[otherType] = processData(data); })
+      .catch(() => { cacheRef.current[otherType] = null; });
   }, [symbol, getSymbolForType, processData, renderFromCache]);
 
   useEffect(() => {
@@ -536,6 +539,75 @@ export function OHLCModal({ isOpen, onClose, symbol, strike, optionType, expirat
       setTimeframe(newTf);
     }
   };
+
+  // Live price streaming — update/append the current bar as ticks arrive
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let unlistenFn: (() => void) | null = null;
+    let disposed = false;
+    const intervalSeconds = timeframe === '5' ? 300 : 900;
+    const activeSymbol = getSymbolForType(currentType).toUpperCase().split('|')[0].trim();
+
+    const setupListener = async () => {
+      const fn = await listen<PriceUpdate>('price-update', (event) => {
+        const update = event.payload;
+        if (!update.price || update.price <= 0) return;
+
+        const updateSymbol = update.symbol.toUpperCase().split('|')[0].trim();
+        if (updateSymbol !== activeSymbol) return;
+
+        const chart = chartInstanceRef.current;
+        const cachedData = cacheRef.current[currentType];
+        if (!chart || !cachedData || !chart.data.datasets[0]) return;
+
+        const bucketTime = Math.floor(Math.floor(Date.now() / 1000) / intervalSeconds) * intervalSeconds;
+        const price = update.price;
+
+        type ChartPoint = { x: number; o: number; h: number; l: number; c: number };
+        const dataset = chart.data.datasets[0].data as ChartPoint[];
+        const labels = chart.data.labels as string[];
+        const lastOhlc = cachedData.ohlcData[cachedData.ohlcData.length - 1];
+
+        if (lastOhlc && lastOhlc.timestamp === bucketTime) {
+          // Update the last bar in-place
+          lastOhlc.high = Math.max(lastOhlc.high, price);
+          lastOhlc.low = Math.min(lastOhlc.low, price);
+          lastOhlc.close = price;
+          const i = dataset.length - 1;
+          dataset[i] = { x: i, o: lastOhlc.open, h: lastOhlc.high, l: lastOhlc.low, c: lastOhlc.close };
+        } else {
+          // New bar — open = last close or price
+          const openPrice = lastOhlc ? lastOhlc.close : price;
+          const newBar: OHLCBar = { timestamp: bucketTime, open: openPrice, high: price, low: price, close: price, volume: null };
+          cachedData.ohlcData.push(newBar);
+          const newIdx = dataset.length;
+          dataset.push({ x: newIdx, o: openPrice, h: price, l: price, c: price });
+          labels.push(formatBarTime(bucketTime));
+          // Advance x-axis window if user was already at the latest bar
+          const xScale = chart.scales.x;
+          if (xScale && Math.round(xScale.max) >= newIdx - 1) {
+            chart.options.scales!.x!.max = newIdx;
+          }
+        }
+
+        chart.update('none');
+      });
+
+      if (disposed) {
+        fn();
+      } else {
+        unlistenFn = fn;
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      disposed = true;
+      unlistenFn?.();
+    };
+  }, [isOpen, currentType, timeframe, getSymbolForType]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

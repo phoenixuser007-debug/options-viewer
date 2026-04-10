@@ -8,7 +8,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { fetchOptions, fetchPrice, fetchExpirations, startPriceStream, stopPriceStream } from './hooks/useTauriCommands';
 import type { ExpirationInfo, StrikeData, OptionData, OptionsResponse, SymbolSearchResult, PriceUpdate } from './types';
 
-const COLUMN_NAMES = ['ask', 'bid', 'currency', 'delta', 'expiration', 'gamma', 'iv', 'option-type', 'pricescale', 'rho', 'root', 'strike', 'theoPrice', 'theta', 'vega', 'bid_iv', 'ask_iv'];
+const COLUMN_NAMES = ['ask', 'bid', 'currency', 'delta', 'expiration', 'gamma', 'iv', 'option-type', 'pricescale', 'rho', 'root', 'strike', 'theoPrice', 'theta', 'vega', 'bid_iv', 'ask_iv', 'volume'];
 
 function normalizeSymbolForMatch(value: string): string {
   return value.toUpperCase().split('|')[0].trim();
@@ -130,6 +130,65 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedExpiration, selectedSymbol]);
 
+  // Greeks refresh every 10s (iv, delta, gamma, theta, vega, rho don't stream via WebSocket)
+  useEffect(() => {
+    if (!selectedExpiration || !strikesReady) return;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let isActive = true;
+
+    const refreshGreeks = async () => {
+      try {
+        const data = await fetchOptions(selectedSymbol, selectedExpiration);
+        if (!isActive || !data.symbols) return;
+
+        const columnNames = data.fields || COLUMN_NAMES;
+        const greeksMap = new Map<string, Partial<OptionData>>();
+
+        data.symbols.forEach((option) => {
+          const values = option.f;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const optionData: any = {};
+          columnNames.forEach((col, idx) => { optionData[col] = values[idx]; });
+
+          const key = `${optionData.strike}_${optionData['option-type']}`;
+          greeksMap.set(key, {
+            iv: optionData.iv,
+            delta: optionData.delta,
+            gamma: optionData.gamma,
+            theta: optionData.theta,
+            vega: optionData.vega,
+            rho: optionData.rho,
+            bid_iv: optionData.bid_iv,
+            ask_iv: optionData.ask_iv,
+            theoPrice: optionData.theoPrice,
+          });
+        });
+
+        setStrikes((prev) =>
+          prev.map((row) => ({
+            ...row,
+            call: row.call ? { ...row.call, ...greeksMap.get(`${row.strike}_call`) } : null,
+            put: row.put ? { ...row.put, ...greeksMap.get(`${row.strike}_put`) } : null,
+          }))
+        );
+      } catch (err) {
+        console.error('Greeks refresh error:', err);
+      } finally {
+        if (isActive) {
+          timeoutId = setTimeout(refreshGreeks, 10_000);
+        }
+      }
+    };
+
+    timeoutId = setTimeout(refreshGreeks, 10_000);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+    };
+  }, [selectedSymbol, selectedExpiration, strikesReady]);
+
   // Price streaming
   useEffect(() => {
     let unlistenPrice: (() => void) | null = null;
@@ -138,7 +197,7 @@ function App() {
 
     const setup = async () => {
       try {
-        unlistenPrice = await listen<PriceUpdate>('price-update', (event) => {
+        const priceListener = await listen<PriceUpdate>('price-update', (event) => {
           const update = event.payload;
           const ticker = normalizeSymbolForMatch(selectedSymbol.includes(':')
             ? selectedSymbol.toUpperCase()
@@ -158,7 +217,8 @@ function App() {
           const ltp = update.price > 0 ? update.price : null;
           const nextBid = update.bid ?? ltp;
           const nextAsk = update.ask ?? null;
-          if (nextBid === null && nextAsk === null) return;
+          const nextVolume = typeof update.volume === 'number' ? update.volume : null;
+          if (nextBid === null && nextAsk === null && nextVolume === null) return;
 
           setStrikes((prev) => {
             let changed = false;
@@ -170,6 +230,7 @@ function App() {
                   ...row.call,
                   bid: nextBid ?? row.call.bid,
                   ask: nextAsk ?? row.call.ask,
+                  volume: nextVolume ?? row.call.volume,
                 };
                 changed = true;
                 return { ...row, call };
@@ -180,6 +241,7 @@ function App() {
                   ...row.put,
                   bid: nextBid ?? row.put.bid,
                   ask: nextAsk ?? row.put.ask,
+                  volume: nextVolume ?? row.put.volume,
                 };
                 changed = true;
                 return { ...row, put };
@@ -192,9 +254,21 @@ function App() {
           });
         });
 
-        unlistenError = await listen<string>('price-error', (event) => {
+        if (disposed) {
+          priceListener();
+        } else {
+          unlistenPrice = priceListener;
+        }
+
+        const errorListener = await listen<string>('price-error', (event) => {
           console.error('Price stream error:', event.payload);
         });
+
+        if (disposed) {
+          errorListener();
+        } else {
+          unlistenError = errorListener;
+        }
 
         if (!disposed) {
           const base = selectedSymbol.includes(':') ? selectedSymbol.toUpperCase() : `NSE:${selectedSymbol.toUpperCase()}`;

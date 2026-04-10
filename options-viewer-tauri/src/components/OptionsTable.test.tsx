@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { OptionsTable } from './OptionsTable';
-import { StrikeData } from '../types';
+import type { StrikeData } from '../types';
 
 const mockStrikes: StrikeData[] = [
   {
@@ -79,5 +79,61 @@ describe('OptionsTable formatting and alignment', () => {
     
     const rows = screen.getAllByText(/24,(0|1)00/).map(cell => cell.parentElement);
     expect(rows[0]).toHaveClass('even:bg-[var(--bg-hover)]');
+  });
+
+  it('should flash when delta value changes', async () => {
+    const onOptionClick = vi.fn();
+    const initial: StrikeData[] = [{
+      strike: 24000,
+      call: {
+        ask: 100.5,
+        bid: 99.5,
+        iv: 0.155,
+        delta: 0.55,
+        gamma: 0.0012,
+        theta: -15.5,
+        vega: 20.5,
+        rho: 0.05,
+        strike: 24000,
+        'option-type': 'C',
+        currency: 'INR',
+        expiration: 123456789,
+        pricescale: 100,
+        root: 'NIFTY',
+        bid_iv: null,
+        ask_iv: null,
+        theoPrice: null
+      },
+      put: null
+    }];
+
+    const updated: StrikeData[] = [{
+      ...initial[0],
+      call: {
+        ...initial[0].call!,
+        delta: 0.65,
+      }
+    }];
+
+    const { rerender } = render(
+      <OptionsTable
+        strikes={initial}
+        currentPrice={24100}
+        onOptionClick={onOptionClick}
+      />
+    );
+
+    rerender(
+      <OptionsTable
+        strikes={updated}
+        currentPrice={24100}
+        onOptionClick={onOptionClick}
+      />
+    );
+
+    await waitFor(() => {
+      const deltaCell = screen.getByText('0.6500');
+      expect(deltaCell).toHaveAttribute('style', expect.stringContaining('flash-green 0.6s ease-out forwards'));
+    });
   });
 });

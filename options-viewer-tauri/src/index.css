@@ -222,3 +222,8 @@ textarea {
 .grid-cols-17 {
   grid-template-columns: repeat(17, minmax(0, 1fr));
 }
+
+/* Custom grid for 19 columns (options table with volume) */
+.grid-cols-19 {
+  grid-template-columns: repeat(19, minmax(0, 1fr));
+}
